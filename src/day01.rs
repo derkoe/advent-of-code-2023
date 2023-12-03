@@ -1,5 +1,5 @@
 use aoc_runner_derive::{aoc, aoc_generator};
-use std::num::ParseIntError;
+use std::{collections::HashMap, num::ParseIntError};
 
 #[aoc_generator(day1, part1)]
 fn parse_input_part1(input: &str) -> Result<Vec<Vec<u32>>, ParseIntError> {
@@ -18,68 +18,56 @@ fn parse_input_part1(input: &str) -> Result<Vec<Vec<u32>>, ParseIntError> {
 }
 
 #[aoc_generator(day1, part2)]
-fn parse_input_part2(input: &str) -> Result<Vec<Vec<u32>>, ParseIntError> {
+fn parse_input_part2(input: &str) -> Result<Vec<(u32, u32)>, ParseIntError> {
+    let digits: HashMap<&str, u32> = HashMap::from([
+        ("1", 1),
+        ("one", 1),
+        ("2", 2),
+        ("two", 2),
+        ("3", 3),
+        ("three", 3),
+        ("4", 4),
+        ("four", 4),
+        ("5", 5),
+        ("five", 5),
+        ("6", 6),
+        ("six", 6),
+        ("7", 7),
+        ("seven", 7),
+        ("8", 8),
+        ("eight", 8),
+        ("9", 9),
+        ("nine", 9),
+    ]);
     Ok(input
         .lines()
         .map(|line| {
-            let mut result = Vec::new();
-            let char_count = line.len();
-            let mut i = 0;
-            while i < char_count {
-                let current_char = line.chars().nth(i).or(Some('X')).unwrap();
-                if current_char.is_ascii_digit() {
-                    result.push(current_char.to_digit(10).unwrap());
-                    i += 1;
-                } else {
-                    let substr = &line[i..];
-                    match substr {
-                        x if x.starts_with("one") => {
-                            i += 3;
-                            result.push(1)
-                        }
-                        x if x.starts_with("two") => {
-                            i += 3;
-                            result.push(2)
-                        }
-                        x if x.starts_with("three") => {
-                            i += 5;
-                            result.push(3)
-                        }
-                        x if x.starts_with("four") => {
-                            i += 4;
-                            result.push(4)
-                        }
-                        x if x.starts_with("five") => {
-                            i += 4;
-                            result.push(5)
-                        }
-                        x if x.starts_with("six") => {
-                            i += 3;
-                            result.push(6)
-                        }
-                        x if x.starts_with("seven") => {
-                            i += 5;
-                            result.push(7)
-                        }
-                        x if x.starts_with("eight") => {
-                            i += 5;
-                            result.push(8)
-                        }
-                        x if x.starts_with("nine") => {
-                            i += 4;
-                            result.push(9)
-                        }
-                        _ => i += 1,
-                    }
-                }
-            }
-            Vec::from(result)
+            let first_digit_pos: (&&str, u32) = digits
+                .keys()
+                .map(|key| (key, line.find(key)))
+                .filter(|r| r.1.is_some())
+                .map(|r| (r.0, r.1.unwrap() as u32))
+                .reduce(|a, b| if a.1 < b.1 { a } else { b })
+                .unwrap();
+
+            // find last occurence
+            let last_digit_pos: (&&str, u32) = digits
+                .keys()
+                .map(|key| (key, line.rfind(key)))
+                .filter(|r| r.1.is_some())
+                .map(|r| (r.0, r.1.unwrap() as u32))
+                .reduce(|a, b| if a.1 > b.1 { a } else { b })
+                .unwrap();
+
+            (
+                *digits.get(first_digit_pos.0).unwrap(),
+                *digits.get(last_digit_pos.0).unwrap(),
+            )
         })
         .collect())
 }
 
 #[aoc(day1, part1)]
-#[aoc(day1, part2)]
 fn sum(lines: &Vec<Vec<u32>>) -> u32 {
     let result = lines
         .iter()
@@ -87,4 +75,12 @@ fn sum(lines: &Vec<Vec<u32>>) -> u32 {
         .map(|line| line.parse::<u32>().unwrap())
         .sum();
     result
+}
+
+#[aoc(day1, part2)]
+fn sum2(lines: &Vec<(u32, u32)>) -> u32 {
+    lines
+        .iter()
+        .map(|line| format!("{}{}", line.0, line.1).parse::<u32>().unwrap())
+        .sum()
 }

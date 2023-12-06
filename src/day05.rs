@@ -3,29 +3,28 @@ use itertools::Itertools;
 use std::str::Lines;
 
 #[derive(Debug)]
-struct Map {
-    destination_start: u32,
+struct RangeMap {
     source_start: u32,
     range_length: u32,
+    destination_start: u32,
 }
-impl Map {
-    fn value_for(&self, source_value: u32) -> u32 {
-        if source_value >= self.source_start && source_value < self.source_start + self.range_length
+impl RangeMap {
+    fn map_range(&self, source_range: (u32, u32)) -> (u32, u32) {
+        if source_range.0 + source_range.1 < self.source_start
+            || source_range.0 > self.source_start + self.range_length
         {
-            self.destination_start + (source_value - self.source_start)
-        } else {
-            source_value
-        }
-    }
-    fn value_for_range(&self, source_range: (u32, u32)) -> (u32, u32) {
-        if source_range.0 >= self.source_start
-            && source_range.0 < self.source_start + self.range_length
-        {
-            let start = self.destination_start + (source_range.0 - self.source_start);
-            let end = self.destination_start + (source_range.1 - self.source_start);
-            (start, end)
-        } else {
             source_range
+        } else {
+            let start = source_range.0.max(self.source_start);
+            let end = (source_range.0 + source_range.1).min(self.source_start + self.range_length);
+            let new_start: u32 = self.destination_start + (start - self.source_start);
+            println!(
+                "Mapping {:?} to {:?} with {:?}",
+                source_range,
+                (new_start, end - start),
+                self
+            );
+            (new_start, end - start)
         }
     }
 }
@@ -33,7 +32,7 @@ impl Map {
 #[derive(Debug)]
 struct PlantInfo {
     seeds: Vec<(u32, u32)>,
-    maps: Vec<Vec<Map>>,
+    maps: Vec<Vec<RangeMap>>,
 }
 
 #[aoc_generator(day5, part1)]
@@ -71,7 +70,7 @@ fn parse_part2(input: &str) -> PlantInfo {
     }
 }
 
-fn parse_maps(lines: Lines<'_>) -> Vec<Vec<Map>> {
+fn parse_maps(lines: Lines<'_>) -> Vec<Vec<RangeMap>> {
     let mut maps = Vec::new();
     lines.skip(1).for_each(|line| {
         if line.is_empty() {
@@ -81,7 +80,7 @@ fn parse_maps(lines: Lines<'_>) -> Vec<Vec<Map>> {
             maps.push(Vec::new());
             return;
         }
-        maps.last_mut().unwrap().push(Map {
+        maps.last_mut().unwrap().push(RangeMap {
             destination_start: line.split_whitespace().nth(0).unwrap().parse().unwrap(),
             source_start: line.split_whitespace().nth(1).unwrap().parse().unwrap(),
             range_length: line.split_whitespace().nth(2).unwrap().parse().unwrap(),
@@ -100,7 +99,7 @@ fn calc(plant_info: &PlantInfo) -> u32 {
         .map(|seed| {
             plant_info.maps.iter().fold(*seed, |acc, map| {
                 map.iter()
-                    .fold(acc, |inner_acc, mapping| mapping.value_for_range(inner_acc))
+                    .fold(acc, |inner_acc, mapping| mapping.map_range(inner_acc))
             })
         })
         .map(|i| i.0)

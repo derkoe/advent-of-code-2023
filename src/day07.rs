@@ -1,4 +1,5 @@
 use aoc_runner_derive::{aoc, aoc_generator};
+use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 struct Game {
@@ -7,6 +8,7 @@ struct Game {
 }
 
 #[aoc_generator(day7, part1)]
+#[aoc_generator(day7, part2)]
 fn parse_input(input: &str) -> Vec<Game> {
     input
         .lines()
@@ -20,20 +22,28 @@ fn parse_input(input: &str) -> Vec<Game> {
 }
 
 #[aoc(day7, part1)]
-fn calc(games: &Vec<Game>) -> u32 {
+fn p1(games: &Vec<Game>) -> u32 {
     let mut sorted_games = games.to_vec();
-    sorted_games.sort_by(compare_hands);
+    sorted_games.sort_by(compare_hands_p1);
     sorted_games
         .iter()
         .enumerate()
-        .map(|(i, g)| {
-            // println!("{}", g.hand);
-            (i as u32 + 1) * g.bid
-        })
+        .map(|(i, g)| (i as u32 + 1) * g.bid)
         .sum()
 }
 
-fn map_card_value(c: char) -> u32 {
+#[aoc(day7, part2)]
+fn p2(games: &Vec<Game>) -> u32 {
+    let mut sorted_games = games.to_vec();
+    sorted_games.sort_by(compare_hands_p2);
+    sorted_games
+        .iter()
+        .enumerate()
+        .map(|(i, g)| (i as u32 + 1) * g.bid)
+        .sum()
+}
+
+fn map_card_value_p1(c: char) -> u32 {
     match c {
         'A' => 14,
         'K' => 13,
@@ -43,18 +53,60 @@ fn map_card_value(c: char) -> u32 {
         _ => c.to_digit(10).unwrap(),
     }
 }
+fn map_card_value_p2(c: char) -> u32 {
+    match c {
+        'A' => 14,
+        'K' => 13,
+        'Q' => 12,
+        'J' => 0,
+        'T' => 10,
+        _ => c.to_digit(10).unwrap(),
+    }
+}
 
-fn compare_hands(a: &Game, b: &Game) -> std::cmp::Ordering {
+fn compare_hands_p1(a: &Game, b: &Game) -> std::cmp::Ordering {
     let a_type = hand_type(&a.hand);
     let b_type = hand_type(&b.hand);
 
     let comp = a_type.cmp(&b_type);
     if comp == std::cmp::Ordering::Equal {
-        let a_val = a.hand.chars().map(map_card_value);
-        let b_val = b.hand.chars().map(map_card_value);
+        let a_val = a.hand.chars().map(map_card_value_p1);
+        let b_val = b.hand.chars().map(map_card_value_p1);
         a_val.cmp(b_val)
     } else {
         comp
+    }
+}
+
+fn compare_hands_p2(a: &Game, b: &Game) -> std::cmp::Ordering {
+    let a_type = hand_type_p2(&a.hand);
+    let b_type = hand_type_p2(&b.hand);
+
+    let comp = a_type.cmp(&b_type);
+    if comp == std::cmp::Ordering::Equal {
+        let a_val = a.hand.chars().map(map_card_value_p2);
+        let b_val = b.hand.chars().map(map_card_value_p2);
+        a_val.cmp(b_val)
+    } else {
+        comp
+    }
+}
+
+fn hand_type_p2(hand: &String) -> u32 {
+    let hand_type_no_jokers = hand_type(hand);
+    if hand.contains("J") {
+        let hand_type_with_joker = hand
+            .chars()
+            .unique()
+            .filter(|c| *c != 'J')
+            .map(|c| hand.replace('J', &c.to_string()))
+            .map(|h| hand_type(&h))
+            .chain(Some(hand_type_no_jokers))
+            .max()
+            .unwrap();
+        hand_type_with_joker
+    } else {
+        hand_type_no_jokers
     }
 }
 

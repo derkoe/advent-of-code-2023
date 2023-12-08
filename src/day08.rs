@@ -75,7 +75,6 @@ fn find_path(instructions: &Instructions, start: &str, end: &str) -> usize {
                 _ => panic!("Invalid direction"),
             }
             if current.ends_with(end) {
-                println!("Reached ZZZ after {} steps", count);
                 reached_zzz = true;
                 return;
             }
@@ -93,44 +92,6 @@ fn p2(instructions: &Instructions) -> usize {
         .filter(|k| k.ends_with("A"))
         .map(|k| find_path(instructions, &k, "Z"))
         .fold(1, |acc, x| lcm(acc, x))
-}
-
-// brute force didn't work
-fn p2_brute_force(instructions: &Instructions) -> usize {
-    // find all nodes ending with "A"
-    let mut current: Vec<&String> = instructions
-        .nodes
-        .keys()
-        .filter(|k| k.ends_with("A"))
-        .collect();
-    let mut count = 0;
-    let mut reached_zzz = false;
-
-    while !reached_zzz {
-        // println!("Current: {:?}, count {}", current, count);
-        instructions.directions.chars().for_each(|c| {
-            count += 1;
-
-            current = current
-                .iter()
-                .map(|i| {
-                    let (left, right) = instructions.nodes.get(*i).unwrap();
-                    match c {
-                        'L' => left,
-                        'R' => right,
-                        _ => panic!("Invalid direction"),
-                    }
-                })
-                .collect();
-            if current.iter().filter(|k| k.ends_with("Z")).count() == current.len() {
-                println!("Reached **Z after {} steps", count);
-                reached_zzz = true;
-                return;
-            }
-        });
-    }
-
-    count
 }
 
 #[cfg(test)]

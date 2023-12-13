@@ -8,23 +8,35 @@ blocks = sys.stdin.read().split('\n\n')
 # Split each block into lines and convert each line into a list of characters
 blocks = [[line for line in block.splitlines()] for block in blocks]
 
+def calc_diff(line1, line2):
+    diff = 0
+    for a, b in zip(line1, line2):
+        if a != b:
+            diff += 1
+    return diff
+
 # find the fold for mirrored lines
-def find_mirrored_line_idx(lines):
+def find_mirrored_line_idx(lines, diff_allowed=0):
     for lineno in range(len(lines)):
-        if lineno > 0 and lines[lineno] == lines[lineno-1]:
-            all_same = True
+        diff = 0
+        for a, b in zip(lines[lineno], lines[lineno-1]):
+            if a != b:
+                diff += 1
+        if lineno > 0 and diff <= diff_allowed:
             for diffline in range(1, lineno):
                 if lineno + diffline > len(lines) - 1:
                     break
                 if lineno - diffline - 1 < 0:
                     break
-                if lines[lineno + diffline] != lines[lineno - diffline - 1]:
-                    all_same = False
+                for a, b in zip(lines[lineno + diffline], lines[lineno - diffline - 1]):
+                    if a != b:
+                        diff += 1
 
-            if all_same:
+            if diff == diff_allowed:
                 return lineno
 
     return 0
+
 
 def transpose_lines(lines):
     transposed_lines = []
@@ -32,9 +44,21 @@ def transpose_lines(lines):
         transposed_lines.append("".join([line[col] for line in lines]))
     return transposed_lines
 
-sum = 0
-for blockid, lines in enumerate(blocks):
-    sum += find_mirrored_line_idx(lines) * 100
-    sum += find_mirrored_line_idx(transpose_lines(lines))
 
-print("Part1 =", sum)
+part1 = 0
+for blockid, lines in enumerate(blocks):
+    mirror_line = find_mirrored_line_idx(lines) * 100
+    if not mirror_line:
+        mirror_line = find_mirrored_line_idx(transpose_lines(lines))
+    part1 += mirror_line
+
+print("Part1 =", part1)
+
+part2 = 0
+for blockid, lines in enumerate(blocks):
+    mirror_line = find_mirrored_line_idx(lines, diff_allowed=1) * 100
+    if not mirror_line:
+        mirror_line = find_mirrored_line_idx(transpose_lines(lines), diff_allowed=1)
+    part2 += mirror_line
+
+print("Part2 =", part2)

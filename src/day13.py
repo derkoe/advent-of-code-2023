@@ -1,7 +1,5 @@
 import sys
 
-import sys
-
 # Read from stdin and split blocks by double newline
 blocks = sys.stdin.read().split('\n\n')
 
